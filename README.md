@@ -1,12 +1,14 @@
-**Stet** comes from the Latin word meaning "let it stand." In proofreading, *stet* is an instruction to disregard a correction and leave the original text unchanged.
-
-Stet is a lightweight, keyboard-first terminal text editor for Windows. Open a file, make your changes, and get back to work.
-
 # Stet
 
-**Windows terminal editor · Rust · 1.0.0**
+**A small terminal code editor for Windows.**
 
-Your files, a quiet interface, and familiar shortcuts. No accounts, network access, background services, or workspace setup.
+[![Windows CI](https://github.com/peeksxx/stet-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/peeksxx/stet-editor/actions/workflows/ci.yml)
+
+Windows 10/11 x64 · Rust · UTF-8
+
+[Releases](https://github.com/peeksxx/stet-editor/releases) · [Shortcuts](#shortcuts) · [Build](#build) · [Configuration](docs/configuration.md)
+
+Open a file, make your changes, and get back to work. Stet brings familiar shortcuts, split panes, and syntax colors to your terminal. It runs offline, without accounts, background services, or a separate application runtime.
 
 ```text
  stet  1.0.0      main.rs *
@@ -21,31 +23,30 @@ Your files, a quiet interface, and familiar shortcuts. No accounts, network acce
  ^S Save   ^O Open   ^F Find   F2 Commands   F1 Help
 ```
 
-Interface example, not a screenshot. Colors follow the selected theme.
+*Interface example. Colors follow the selected theme.*
 
-## Editing
+The name comes from the proofreading instruction *stet*: "let it stand."
+
+## Features
 
 - Multiple files with a clickable sidebar.
 - Vertical and horizontal splits, up to eight panes. Views of a file share its buffer.
 - Grapheme navigation, Shift selection, mouse selection, native Windows clipboard.
 - Grouped typing undo, redo, auto-indent, tabs or spaces, optional line wrapping.
 - Literal find, match navigation, case sensitivity, and Replace All with one undo step.
-- Case-insensitive replacements can change letter case. Unchanged replacements keep buffers and other pane positions intact.
 - Syntax colors for common languages, including Rust, C/C++, Python, JS/TS, JSON, TOML, HTML/CSS, and Markdown.
 - Dark, light, and terminal-color themes. File paths, pane layouts, and positions restore on restart.
 - Conflict checks, read-only protection, and flushed temporary-file replacement on save.
 
 ## Install
 
-Requires Windows 10/11 x64 and an interactive console. Windows Terminal is the primary target. No separate application runtime is needed.
+Requires Windows 10/11 x64 and an interactive console. Windows Terminal is the primary target.
 
-Download `Stet-Setup-x64.exe` from the repository's Releases page after a maintainer publishes it. Run setup, then open a new terminal for PATH changes.
+When a release is published, download `Stet-Setup-x64.exe` from [Releases](https://github.com/peeksxx/stet-editor/releases). Run setup, then open a new terminal for PATH changes. You can also [build from source](#build).
 
 Setup installs into `C:\Program Files\Stet`, adds its directory to the machine PATH, and registers an uninstaller. Setup needs elevation; Stet does not. Settings survive upgrades and uninstall.
 
-PATH updates recognize environment-variable aliases and preserve unrelated entries, including empty entries. Custom installation directories cannot contain semicolons.
-
-The installer is unsigned. Windows SmartScreen may warn. Verify its SHA-256 against `SHA256SUMS.txt` from the same release.
+The installer is unsigned. Verify its SHA-256 against `SHA256SUMS.txt` from the same release. Windows SmartScreen may warn.
 
 ## Open a file
 
@@ -63,7 +64,7 @@ Explicit filenames replace session restoration. A new path opens an empty buffer
 
 In Open File, paste one path, including quotes supplied by PowerShell or Command Prompt. Terminal drag-and-drop works when the host pastes the path. Stet does not receive native drop events or execute paths.
 
-## Keys
+## Shortcuts
 
 | Key | Action |
 |---|---|
@@ -71,7 +72,7 @@ In Open File, paste one path, including quotes supplied by PowerShell or Command
 | Ctrl+N / Ctrl+W / Ctrl+Q | New / Close file / Quit |
 | Ctrl+Tab / Ctrl+Shift+Tab | Next / previous file |
 | Ctrl+Z / Ctrl+Y | Undo / redo |
-| Ctrl+A / C / X / V | Select all / copy / cut / paste |
+| Ctrl+A / Ctrl+C / Ctrl+X / Ctrl+V | Select all / copy / cut / paste |
 | Ctrl+F / Ctrl+H / Ctrl+G | Find / Replace All / Go to line |
 | F3 / Shift+F3 / Alt+C | Next match / previous match / case sensitivity |
 | Ctrl+P | Quick open under the starting directory |
@@ -104,10 +105,18 @@ Settings are optional. Invalid files produce a notification and stay intact. [Co
 Install stable Rust with the MSVC toolchain and Visual Studio C++ Build Tools with a Windows SDK.
 
 ```powershell
+git clone https://github.com/peeksxx/stet-editor.git
+cd stet-editor
+cargo build --locked --release
+./target/release/stet.exe README.md
+```
+
+Run the source checks:
+
+```powershell
 cargo fmt --all -- --check
 cargo clippy --locked --all-targets --all-features -- -D warnings
 cargo test --locked --all-targets
-cargo build --locked --release
 ```
 
 For an installer, install Inno Setup 6 or 7:
@@ -116,7 +125,7 @@ For an installer, install Inno Setup 6 or 7:
 ./scripts/package.ps1 -Compiler "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 ```
 
-Outputs go to `release`. Use `-OutputDirectory` to choose another folder. Packaging respects `CARGO_TARGET_DIR`. The build needs registry access; the installed editor works offline.
+Installer outputs go to `release`. Use `-OutputDirectory` to choose another folder. Packaging respects `CARGO_TARGET_DIR`. The build needs registry access; the installed editor works offline.
 
 ## Limits
 
@@ -127,6 +136,12 @@ Outputs go to `release`. Use `-OutputDirectory` to choose another folder. Packag
 - Quick open scans at most 10,000 directory entries, returns up to 5,000 files, skips symbolic links and common build folders, and does not scan drive roots.
 - No recovery copies of unsaved text. Forced termination or power loss can lose changes. Concurrent writers can still race between the final conflict check and filesystem replacement.
 - File loading and saving are synchronous. Large files or slow drives can pause the interface. See [acceptance checks](docs/acceptance.md) for host-specific verification.
-- The executable and installer are unsigned. This project has no license selected yet.
+- Custom installation directories cannot contain semicolons because setup adds the directory to PATH.
 
-[Manual publishing guide](docs/publishing.md) · [Architecture](docs/architecture.md)
+## License and notices
+
+No project license has been selected. Dependency licenses are retained in [third-party notices](THIRD_PARTY_NOTICES.txt) and [Rust notices](docs/RUST_NOTICES.html).
+
+---
+
+[Architecture](docs/architecture.md) · [Acceptance checks](docs/acceptance.md) · [Dependencies](docs/dependencies.md) · [Publishing](docs/publishing.md)
