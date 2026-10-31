@@ -734,6 +734,9 @@ fn write(frame: &mut Frame, area: Rect, text: &str, style: Style) {
 }
 
 fn bracket_pair(doc: &Document, cursor: usize) -> Option<(usize, usize)> {
+    if cursor > doc.end() {
+        return None;
+    }
     let start = if cursor < doc.end() && "()[]{}".contains(doc.text.char(cursor)) {
         cursor
     } else if cursor > 0 && "()[]{}".contains(doc.text.char(cursor - 1)) {

@@ -85,12 +85,16 @@ pub struct PaneHit {
 
 struct SearchRequest {
     ticket: u64,
+    document: usize,
+    generation: u64,
     text: ropey::Rope,
     query: String,
     sensitive: bool,
 }
 struct SearchResult {
     ticket: u64,
+    document: usize,
+    generation: u64,
     matches: Vec<Range<usize>>,
 }
 
@@ -126,6 +130,7 @@ pub struct App {
     next_document: usize,
     next_view: usize,
     settings_writable: bool,
+    session_writable: bool,
 }
 
 impl App {
@@ -156,6 +161,19 @@ impl App {
                 Bindings::new(BTreeMap::new())?
             }
         };
+        let (session, session_writable) =
+            match config::load::<Session>(&config_dir.join("session.json")).and_then(|session| {
+                if let Some(session) = &session {
+                    session.validate()?;
+                }
+                Ok(session)
+            }) {
+                Ok(session) => (session, true),
+                Err(e) => {
+                    notice = format!("Session not restored: {e}. Original preserved");
+                    (None, false)
+                }
+            };
         let (search_sender, requests) = mpsc::channel::<SearchRequest>();
         let (results, search_results) = mpsc::channel();
         let search_signal = Arc::new(AtomicU64::new(0));
@@ -173,6 +191,8 @@ impl App {
                 if results
                     .send(SearchResult {
                         ticket: request.ticket,
+                        document: request.document,
+                        generation: request.generation,
                         matches,
                     })
                     .is_err()
@@ -213,17 +233,16 @@ impl App {
             next_document: 0,
             next_view: 1,
             settings_writable,
+            session_writable,
         };
-        if paths.is_empty() && restore && app.settings.restore_session {
-            match config::load::<Session>(&app.config_dir.join("session.json")) {
-                Ok(Some(session)) => {
-                    if let Err(e) = app.restore(session) {
-                        app.notice = format!("Session not restored: {e}");
-                    }
-                }
-                Err(e) => app.notice = format!("Session not restored: {e}"),
-                _ => {}
-            }
+        if paths.is_empty()
+            && restore
+            && app.settings.restore_session
+            && let Some(session) = session
+            && let Err(e) = app.restore(session)
+        {
+            app.notice = format!("Session not restored: {e}. Original preserved");
+            app.session_writable = false;
         }
         for path in paths {
             if let Err(e) = app.open(&path) {
@@ -261,7 +280,7 @@ impl App {
                 ..View::default()
             },
         );
-        self.matches.clear();
+        self.refresh_search();
     }
 
     pub fn open(&mut self, path: &Path) -> Result<usize> {
@@ -342,12 +361,16 @@ impl App {
         if session.directory.is_dir() {
             self.directory = session.directory;
         }
+        self.refresh_search();
         Ok(())
     }
 
     pub fn persist(&self) -> Result<()> {
         if self.settings_writable {
             config::store(&self.config_dir.join("settings.json"), &self.settings)?;
+        }
+        if !self.session_writable {
+            return Ok(());
         }
         let session = Session {
             version: 1,
@@ -421,6 +444,8 @@ impl App {
         } else {
             let request = SearchRequest {
                 ticket: self.search_ticket,
+                document: self.view().document,
+                generation: self.doc().generation,
                 text: self.doc().text.clone(),
                 query: self.query.clone(),
                 sensitive: self.sensitive,
@@ -430,7 +455,13 @@ impl App {
     }
 
     fn find_next(&mut self, previous: bool, include_current: bool) {
-        let cursor = self.view().cursor;
+        let end = self.doc().end();
+        self.matches.retain(|r| r.start < r.end && r.end <= end);
+        let cursor = if include_current {
+            self.view().cursor
+        } else {
+            self.view().selection().start
+        };
         let found = if previous {
             self.matches
                 .iter()
@@ -599,6 +630,7 @@ impl App {
                     self.layout.remove(self.active);
                     self.views.remove(&self.active);
                     self.active = self.layout.leaves()[0];
+                    self.refresh_search();
                 }
             }
             "single_pane" => {
@@ -721,7 +753,8 @@ impl App {
             After::Reload => {
                 let path = self.doc().path.clone().context("Save the document first")?;
                 let id = self.view().document;
-                let document = Document::open(&path, self.settings.newline())?;
+                let mut document = Document::open(&path, self.settings.newline())?;
+                document.generation = self.doc().generation + 1;
                 self.documents.insert(id, document);
                 let end = self.doc().end();
                 for view in self.views.values_mut().filter(|v| v.document == id) {
@@ -1242,6 +1275,7 @@ impl App {
                     Some(prompt.text.trim().to_owned())
                 };
                 self.doc_mut().generation += 1;
+                self.refresh_search();
             }
             _ => {}
         }
@@ -1337,7 +1371,10 @@ impl App {
     pub fn poll_background(&mut self) -> bool {
         let mut moved = false;
         while let Ok(result) = self.search_results.try_recv() {
-            if result.ticket == self.search_ticket {
+            if result.ticket == self.search_ticket
+                && result.document == self.view().document
+                && result.generation == self.doc().generation
+            {
                 self.matches = result.matches;
                 self.search_pending = false;
                 if self

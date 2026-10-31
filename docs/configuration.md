@@ -22,6 +22,8 @@ Themes: `dark`, `light`, `terminal`. Tab width: 1 to 16. Sidebar width: 16 to 60
 
 F6 changes and saves the theme immediately. Other interface settings persist on normal exit. Sessions store saved paths and view metadata, including unsaved buffers' paths when those files already exist. Unsaved text is never stored.
 
+Invalid session files stay intact, including when restoration is disabled or filenames are supplied. Repair or remove the invalid file to resume session persistence.
+
 `keybindings.json` maps command identifiers to one key combination:
 
 ```json
