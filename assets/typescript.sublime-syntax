@@ -1,0 +1,41 @@
+%YAML 1.2
+---
+name: TypeScript
+file_extensions: [ts, tsx]
+scope: source.ts
+contexts:
+  main:
+    - match: '//.*$'
+      scope: comment.line.double-slash.ts
+    - match: '/\*'
+      push:
+        - meta_scope: comment.block.ts
+        - match: '\*/'
+          pop: true
+    - match: '"'
+      push:
+        - meta_scope: string.quoted.double.ts
+        - match: '\\.'
+          scope: constant.character.escape.ts
+        - match: '"'
+          pop: true
+    - match: "'"
+      push:
+        - meta_scope: string.quoted.single.ts
+        - match: '\\.'
+          scope: constant.character.escape.ts
+        - match: "'"
+          pop: true
+    - match: '`'
+      push:
+        - meta_scope: string.quoted.other.ts
+        - match: '\\.'
+          scope: constant.character.escape.ts
+        - match: '`'
+          pop: true
+    - match: '\b(import|export|from|const|let|var|function|return|if|else|for|while|class|extends|interface|type|enum|public|private|readonly|async|await|new|throw|try|catch|switch|case|break|default|as|in|of|typeof|keyof)\b'
+      scope: keyword.control.ts
+    - match: '\b(string|number|boolean|void|never|unknown|any|null|undefined|true|false)\b'
+      scope: storage.type.ts
+    - match: '\b[0-9]+(\.[0-9]+)?\b'
+      scope: constant.numeric.ts

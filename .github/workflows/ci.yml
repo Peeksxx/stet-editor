@@ -1,0 +1,25 @@
+name: Windows CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - shell: pwsh
+        run: rustup toolchain install stable --profile minimal --component rustfmt,clippy
+      - shell: pwsh
+        run: |
+          cargo +stable fmt --all -- --check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cargo +stable clippy --locked --all-targets --all-features -- -D warnings
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cargo +stable test --locked --all-targets
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cargo +stable build --locked --release
+          exit $LASTEXITCODE
