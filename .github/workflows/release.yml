@@ -1,26 +1,14 @@
 name: Build release installer
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: Version tag to build
-        required: true
-        default: v1.0.0
 permissions:
   contents: read
 jobs:
   package:
     runs-on: windows-latest
     steps:
-      - name: Validate version
-        shell: pwsh
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
-          if ($env:VERSION -ne 'v1.0.0') { throw 'This source packages v1.0.0 only' }
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: ${{ inputs.version }}
           persist-credentials: false
       - shell: pwsh
         run: rustup toolchain install stable --profile minimal --component rustfmt,clippy

@@ -586,6 +586,18 @@ impl Ui {
                 y += 1;
             }
         }
+        if doc.path.is_none() && doc.end() == 0 && !doc.dirty() {
+            crate::logo::draw(
+                frame,
+                Rect::new(
+                    text_x,
+                    area.y + 2,
+                    width as u16,
+                    area.height.saturating_sub(2),
+                ),
+                colors.background,
+            );
+        }
         if let Some(view) = app.views.get_mut(&id) {
             view.top = top;
             view.wrap_top = wrap_top;
