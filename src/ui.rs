@@ -235,7 +235,7 @@ impl Ui {
         write(
             frame,
             Rect::new(1, 0, area.width.saturating_sub(2), 1),
-            "stet  1.0.0",
+            concat!("stet  ", env!("CARGO_PKG_VERSION")),
             Style::default()
                 .fg(colors.accent)
                 .add_modifier(Modifier::BOLD),

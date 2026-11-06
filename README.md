@@ -1,0 +1,159 @@
+# Stet
+
+**A small terminal code editor for Windows.**
+
+Version 1.1.0
+
+[![Windows CI](https://github.com/peeksxx/stet-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/peeksxx/stet-editor/actions/workflows/ci.yml)
+
+Windows 10/11 x64 · Rust · UTF-8
+
+[Releases](https://github.com/peeksxx/stet-editor/releases) · [Shortcuts](#shortcuts) · [Build](#build) · [Configuration](#configure)
+
+Open a file, make your changes, and get back to work. Stet brings familiar shortcuts, split panes, and syntax colors to your terminal. It runs offline, without accounts, background services, or a separate application runtime.
+
+```text
+ stet  1.1.0      main.rs *
+
+ OPEN FILES             │ main.rs *
+ › main.rs *            │  1  fn main() {
+   Cargo.toml           │  2      println!("Let it stand.");
+ + Open file            │  3  }
+                        │
+
+ EDIT | Ln 2, Col 5 | Rust | UTF-8 | CRLF | Spaces:4 | Modified
+ ^S Save   ^O Open   ^F Find   F2 Commands   F1 Help
+```
+
+*Interface example. Colors follow the selected theme.*
+
+The name comes from the proofreading instruction *stet*: "let it stand."
+
+## Features
+
+- Multiple files with a clickable sidebar.
+- Vertical and horizontal splits, up to eight panes. Views of a file share its buffer.
+- Grapheme navigation, Shift selection, mouse selection, native Windows clipboard.
+- Grouped typing undo, redo, auto-indent, tabs or spaces, optional line wrapping.
+- Literal find, match navigation, case sensitivity, and Replace All with one undo step.
+- Syntax colors for common languages, including Rust, C/C++, Python, JS/TS, JSON, TOML, HTML/CSS, and Markdown.
+- Dark, light, and terminal-color themes. File paths, pane layouts, and positions restore on restart.
+- Conflict checks, read-only protection, and flushed temporary-file replacement on save.
+
+## Install
+
+Requires Windows 10/11 x64 and an interactive console. Windows Terminal is the primary target.
+
+Download `Stet-Setup-x64.exe` from [Releases](https://github.com/peeksxx/stet-editor/releases). Run setup, then open a new terminal for PATH changes. You can also [build from source](#build).
+
+Setup installs into `C:\Program Files\Stet`, adds its directory to the machine PATH, and registers an uninstaller. Setup needs elevation; Stet does not. Settings survive upgrades and uninstall.
+
+The installer is unsigned. Verify its SHA-256 against `SHA256SUMS.txt` from the same release. Windows SmartScreen may warn.
+
+## Open a file
+
+```powershell
+stet
+stet README.md
+stet "C:\Users\Example\Documents\Financial Report.txt"
+stet main.cpp bookmarks.h
+stet --no-restore
+stet --help
+stet --version
+```
+
+Explicit filenames replace session restoration. A new path opens an empty buffer and is created only when saved. Use `--` before filenames starting with `-`.
+
+In Open File, paste one path, including quotes supplied by PowerShell or Command Prompt. Terminal drag-and-drop works when the host pastes the path. Stet does not receive native drop events or execute paths.
+
+## Shortcuts
+
+| Key | Action |
+|---|---|
+| Ctrl+O / Ctrl+S / Ctrl+Shift+S | Open / Save / Save As |
+| Ctrl+N / Ctrl+W / Ctrl+Q | New / Close file / Quit |
+| Ctrl+Tab / Ctrl+Shift+Tab | Next / previous file |
+| Ctrl+Z / Ctrl+Y | Undo / redo |
+| Ctrl+A / Ctrl+C / Ctrl+X / Ctrl+V | Select all / copy / cut / paste |
+| Ctrl+F / Ctrl+H / Ctrl+G | Find / Replace All / Go to line |
+| F3 / Shift+F3 / Alt+C | Next match / previous match / case sensitivity |
+| Ctrl+P | Quick open under the starting directory |
+| F2 / Ctrl+Shift+P | Command palette |
+| Ctrl+B / F8 | Toggle sidebar / focus file list |
+| Ctrl+\ / Ctrl+Shift+\ | Vertical / horizontal split |
+| Alt+Arrow / Alt+W / Alt+1 | Focus pane / close pane / single pane |
+| Alt+Z / F6 / F7 | Wrap / theme / syntax override |
+| Alt+I / Alt+R | Full path / reload from disk |
+| F1 / Esc | Help / cancel prompt |
+
+F2 exposes every command when a terminal intercepts a shortcut. Help and lists scroll with Up/Down. Hold Shift while using the mouse for the terminal's own selection, where supported.
+
+Closing a modified file offers Save, Discard, or Cancel. Quitting visits each modified buffer. A conflict prompt requires explicit confirmation before replacing changed content, and checks the revision again before saving.
+
+## Configure
+
+Files live in `%LOCALAPPDATA%\Stet`:
+
+```text
+settings.json      Theme, indentation, wrapping, sidebar, restoration
+keybindings.json   Command-to-key overrides
+session.json       Saved paths and pane positions, never document contents
+```
+
+Settings are optional. Invalid files produce a notification and stay intact.
+
+## Build
+
+Install stable Rust with the MSVC toolchain and Visual Studio C++ Build Tools with a Windows SDK.
+
+```powershell
+git clone https://github.com/peeksxx/stet-editor.git
+cd stet-editor
+cargo build --locked --release
+./target/release/stet.exe README.md
+```
+
+Run the source checks:
+
+```powershell
+cargo fmt --all -- --check
+cargo clippy --locked --all-targets --all-features -- -D warnings
+cargo test --locked --all-targets
+```
+
+For an installer, install Inno Setup 6.5.2 or newer:
+
+```powershell
+./scripts/package.ps1 -Compiler "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+```
+
+Installer outputs go to `release`. Use `-OutputDirectory` to choose another folder. Packaging respects `CARGO_TARGET_DIR`. The build needs registry access; the installed editor works offline.
+
+## Limits
+
+- UTF-8 with or without BOM. UTF-16, invalid UTF-8, and binary files are refused. Original LF, CRLF, CR, and mixed endings are preserved; new lines use the file's first ending.
+- Files are limited to 64 MiB and lines to 128 KiB. Syntax coloring stops above 1 MiB, 20,000 lines, or a 4 KiB line. Highlighting catches up incrementally after edits.
+- Find is single-line literal text, with up to 10,000 non-overlapping results. Case-insensitive matching folds ASCII only. There are no regular expressions.
+- Undo history keeps up to 2,000 transactions and about 128 MiB per document; older transactions expire. A single large transaction may exceed that budget.
+- Quick open scans at most 10,000 directory entries, returns up to 5,000 files, skips symbolic links and common build folders, and does not scan drive roots.
+- No recovery copies of unsaved text. Forced termination or power loss can lose changes. Concurrent writers can still race between the final conflict check and filesystem replacement.
+- File loading and saving are synchronous. Large files or slow drives can pause the interface.
+- Custom installation directories cannot contain semicolons because setup adds the directory to PATH.
+
+## License and notices
+
+No project license has been selected. Dependency licenses are retained in [third-party notices](THIRD_PARTY_NOTICES.txt) and [Rust notices](docs/RUST_NOTICES.html).
+
+
+## Publish a release
+
+The version in `Cargo.toml` sets the editor title, command-line output, executable metadata, installer version, and build artifact name.
+
+After committing a release version, create and push the matching tag:
+
+```powershell
+git tag v1.1.0
+git push origin main v1.1.0
+```
+
+The release workflow builds and tests that tag, then publishes the installer and checksum to GitHub Releases. A manual workflow run from a branch uploads an Actions artifact without publishing a release.

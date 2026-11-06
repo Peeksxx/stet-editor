@@ -57,12 +57,13 @@ fn run() -> Result<()> {
         if !positional {
             match argument.to_str() {
                 Some("--version") => {
-                    println!("stet 1.0.0");
+                    println!("stet {}", env!("CARGO_PKG_VERSION"));
                     return Ok(());
                 }
                 Some("--help" | "-h") => {
                     println!(
-                        "Stet 1.0.0\n\nUsage: stet [--no-restore] [--] [FILE ...]\n\n--no-restore  Start without the previous session\n--version     Show version\n--help        Show this help\n\nCtrl+O Open  Ctrl+S Save  Ctrl+Q Quit  F2 Commands  F1 Help"
+                        "Stet {}\n\nUsage: stet [--no-restore] [--] [FILE ...]\n\n--no-restore  Start without the previous session\n--version     Show version\n--help        Show this help\n\nCtrl+O Open  Ctrl+S Save  Ctrl+Q Quit  F2 Commands  F1 Help",
+                        env!("CARGO_PKG_VERSION")
                     );
                     return Ok(());
                 }

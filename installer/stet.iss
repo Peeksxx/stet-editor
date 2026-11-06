@@ -4,12 +4,15 @@
 #ifndef OutputPath
 #define OutputPath "..\release"
 #endif
+#ifndef StetVersion
+#error StetVersion must be supplied by scripts/package.ps1
+#endif
 
 [Setup]
 AppId={{89B73B6A-C935-4A69-A7C2-9A816A40D273}
 AppName=Stet
-AppVersion=1.0.0
-AppVerName=Stet 1.0.0
+AppVersion={#StetVersion}
+AppVerName=Stet {#StetVersion}
 DefaultDirName={autopf}\Stet
 DefaultGroupName=Stet
 DisableProgramGroupPage=yes
@@ -29,7 +32,7 @@ WizardSmallImageFile=..\assets\stet-wizard-small.png
 ChangesEnvironment=yes
 UninstallDisplayIcon={app}\stet.exe
 CloseApplications=no
-VersionInfoVersion=1.0.0.0
+VersionInfoVersion={#StetVersion}.0
 VersionInfoDescription=Stet Setup
 
 [Files]
